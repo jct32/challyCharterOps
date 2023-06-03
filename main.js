@@ -141,20 +141,22 @@ function getRoute() {
     let routeGraph = generateGraph(minDistance, maxDistance);
 
     let paragraph = document.getElementById("output-paragraph");
+    paragraph.innerHTML = ''
     if (routeGraph.get(startingAirport.toUpperCase()) == undefined) {
         let randomNum = Math.floor(Math.random() * routeGraph.size)
         startingAirport = Array.from(routeGraph.keys())[randomNum]
-        paragraph.innerHTML = `Failed to get airport randomized to ${startingAirport}<br>`
+        paragraph.innerHTML += `Failed to get airport randomized to ${startingAirport}<br>`
     }
 
     if (isNaN(Number(legs)) || legs == '') {
-        legs = 4
+        paragraph.innerHTML += `Legs defaulted to 3<br>`
+        legs = 3
     }
     else {
         legs = Number(legs)
     }
 
-    let returnedRoute = routeBuilder(routeGraph, startingAirport, legs)
+    let returnedRoute = routeBuilder(routeGraph, startingAirport, legs + 1)
     for (var i = 0; i < returnedRoute.length - 1; i++) {
         var origin = returnedRoute[i];
         var destination = returnedRoute[i+1]
