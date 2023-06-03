@@ -124,6 +124,9 @@ function getRoute() {
     let minDistance = document.getElementById('min-distance').value
     let maxDistance = document.getElementById('max-distance').value
     let legs = document.getElementById('legs').value
+    let maxPax = document.getElementById('max-pax').value
+    let paragraph = document.getElementById("output-paragraph");
+    paragraph.innerHTML = ''
 
     if (isNaN(Number(minDistance)) || minDistance == '') {
         minDistance = 0
@@ -137,11 +140,16 @@ function getRoute() {
     else {
         maxDistance = Number(maxDistance)
     }
+    if (isNaN(Number(maxPax)) || maxPax == '') {
+        maxPax = 12
+        paragraph.innerHTML += 'Max Passengers set to 12 <br>'
+    }
+    else {
+        maxPax = Number(maxPax)
+    }
 
     let routeGraph = generateGraph(minDistance, maxDistance);
 
-    let paragraph = document.getElementById("output-paragraph");
-    paragraph.innerHTML = ''
     if (routeGraph.get(startingAirport.toUpperCase()) == undefined) {
         let randomNum = Math.floor(Math.random() * routeGraph.size)
         startingAirport = Array.from(routeGraph.keys())[randomNum]
@@ -162,10 +170,16 @@ function getRoute() {
         var destination = returnedRoute[i+1]
         var button = document.createElement('button')
         var link = document.createElement('a')
+        var pax = Math.floor(Math.random() * maxPax)
+        // Ensure the plane is never less than half full
+        while (pax < 5) {
+            pax = pax * 2
+        }
         var simbriefURL = ['https://dispatch.simbrief.com/options/custom?']
         simbriefURL.push('type=CL60')
         simbriefURL.push(`orig=${origin}`)
         simbriefURL.push(`dest=${destination}`)
+        simbriefURL.push(`pax=${pax}`)
         simbriefURL = simbriefURL.join('&')
         link.href = simbriefURL
         button.innerText = 'Simbrief'
