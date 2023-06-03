@@ -165,16 +165,19 @@ function getRoute() {
     }
 
     let returnedRoute = routeBuilder(routeGraph, startingAirport, legs + 1)
+    let prev_pax = 999
     for (var i = 0; i < returnedRoute.length - 1; i++) {
         var origin = returnedRoute[i];
         var destination = returnedRoute[i+1]
         var button = document.createElement('button')
         var link = document.createElement('a')
         var pax = Math.floor(Math.random() * maxPax)
-        // Ensure the plane is never less than half full
-        while (pax < 5) {
-            pax = pax + 5
+        if (prev_pax == 0) {
+            while (pax == 0) {
+                pax = Math.floor(Math.random() * maxPax)
+            }
         }
+        prev_pax = pax
         var simbriefURL = ['https://dispatch.simbrief.com/options/custom?']
         simbriefURL.push('type=CL60')
         simbriefURL.push(`orig=${origin}`)
