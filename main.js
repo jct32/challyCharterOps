@@ -173,7 +173,7 @@ function getRoute() {
         var pax = Math.floor(Math.random() * maxPax)
         // Ensure the plane is never less than half full
         while (pax < 5) {
-            pax = pax * 2
+            pax = pax + 5
         }
         var simbriefURL = ['https://dispatch.simbrief.com/options/custom?']
         simbriefURL.push('type=CL60')
