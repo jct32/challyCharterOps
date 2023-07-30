@@ -89,43 +89,87 @@ function radiansToDegrees(radians) {
 }
 
 function routeBuilder(graph, start, legs) {
-    let paths = [start]
-    let attempts = 0
+    let paths = []
+    let origin = start
+    paths.push(start)
+    let destinations = [];
+    let dontLoadGraph = false
     while(paths.length != legs) {
-        if (attempts < 10) {
-            if (graph.get(start) == undefined) {
-                paths.pop()
-                start = paths[paths.length - 1]
-                attempts++
-                while (graph.get(start).length == 1) {
-                    paths.pop()
-                    start = paths[paths.length - 1]
-                }
-                continue
+        if (!dontLoadGraph) {
+            let nodes = graph.get(start)
+            destinations.push(nodes)
+        }
+        if ((destinations[0] == undefined) || (destinations[0] == 0)) {
+            return 0
+        }
+        if ((destinations[destinations.length - 1] == undefined) || (destinations[destinations.length - 1] == 0)) {
+            let removedAirport = paths.pop()
+            let index = destinations[destinations.length - 2].indexOf(removedAirport)
+            destinations[destinations.length - 2].splice(index, 1)
+            destinations.pop()
+            dontLoadGraph = true
+        }
+        else {
+            let randomNum = Math.floor(Math.random() * destinations[destinations.length - 1].length)
+            start = destinations[destinations.length - 1][randomNum]
+            paths.push(start)
+            dontLoadGraph = false
+        }
+    }
+    return paths
+}
+
+function buildRouteToOrigin(graph, start, legs) {
+    let paths = []
+    let origin = start
+    paths.push(start)
+    let destinations = [];
+    let dontLoadGraph = false
+    while(paths.length != legs) {
+        if (!dontLoadGraph) {
+            let nodes = graph.get(start)
+            destinations.push(nodes)
+        }
+        if ((destinations[0] == undefined) || (destinations[0] == 0)) {
+            return 0
+        }
+        if ((destinations[destinations.length - 1] == undefined) || (destinations[destinations.length - 1] == 0)) {
+            let removedAirport = paths.pop()
+            let index = destinations[destinations.length - 2].indexOf(removedAirport)
+            destinations[destinations.length - 2].splice(index, 1)
+            destinations.pop()
+            dontLoadGraph = true
+        }
+        else if (paths.length == legs - 1) {
+            if(!destinations[destinations.length - 1].includes(origin)) {
+                let removedAirport = paths.pop()
+                let index = destinations[destinations.length - 2].indexOf(removedAirport)
+                destinations[destinations.length - 2].splice(index, 1)
+                destinations.pop()
+                dontLoadGraph = true
             }
             else {
-                let randomNum = Math.floor(Math.random() * graph.get(start).length)
-                prev_legs = graph.get(start).length
-                start = graph.get(start)[randomNum]
-                paths.push(start)
-                attempts = 0
+                paths.push(origin)
             }
         }
         else {
-            console.log("Max number of attempts, try again with different selections")
-            break
+            let randomNum = Math.floor(Math.random() * destinations[destinations.length - 1].length)
+            start = destinations[destinations.length - 1][randomNum]
+            paths.push(start)
+            dontLoadGraph = false
         }
     }
     return paths
 }
 
 function getRoute() {
-    let startingAirport = document.getElementById('starting-airport').value
+    let startingAirport = document.getElementById('starting-airport').value.toUpperCase()
     let minDistance = document.getElementById('min-distance').value
     let maxDistance = document.getElementById('max-distance').value
     let legs = document.getElementById('legs').value
     let maxPax = document.getElementById('max-pax').value
-    let paragraph = document.getElementById("output-paragraph");
+    let paragraph = document.getElementById("output-paragraph")
+    let returnToOrigin = document.getElementById("return-origin")
     paragraph.innerHTML = ''
 
     if (isNaN(Number(minDistance)) || minDistance == '') {
@@ -160,37 +204,52 @@ function getRoute() {
         paragraph.innerHTML += `Legs defaulted to 3<br>`
         legs = 3
     }
+    else if(Number(legs > 10)) {
+        paragraph.innerHTML += `Max legs is 10<br>`
+        legs = 10
+    }
     else {
         legs = Number(legs)
     }
+    let returnedRoute = -1
+    if (returnToOrigin.checked == true) {
+        returnedRoute = buildRouteToOrigin(routeGraph, startingAirport, legs + 1)
+    }
+    else {
+        returnedRoute = routeBuilder(routeGraph, startingAirport, legs + 1)
+    }
 
-    let returnedRoute = routeBuilder(routeGraph, startingAirport, legs + 1)
-    let prev_pax = 999
-    for (var i = 0; i < returnedRoute.length - 1; i++) {
-        var origin = returnedRoute[i];
-        var destination = returnedRoute[i+1]
-        var button = document.createElement('button')
-        var link = document.createElement('a')
-        var pax = Math.floor(Math.random() * maxPax)
-        if (prev_pax == 0) {
-            while (pax == 0) {
-                pax = Math.floor(Math.random() * maxPax)
+    if(returnedRoute == 0) {
+        paragraph.innerHTML += `Unabled to proprely build route, please adjust parameters<br>`
+    }
+    else {
+        let prev_pax = 999
+        for (var i = 0; i < returnedRoute.length - 1; i++) {
+            var origin = returnedRoute[i];
+            var destination = returnedRoute[i+1]
+            var button = document.createElement('button')
+            var link = document.createElement('a')
+            var pax = Math.floor(Math.random() * maxPax)
+            if (prev_pax == 0) {
+                while (pax == 0) {
+                    pax = Math.floor(Math.random() * maxPax)
+                }
             }
-        }
-        prev_pax = pax
-        var simbriefURL = ['https://dispatch.simbrief.com/options/custom?']
-        simbriefURL.push('type=CL60')
-        simbriefURL.push(`orig=${origin}`)
-        simbriefURL.push(`dest=${destination}`)
-        simbriefURL.push(`pax=${pax}`)
-        simbriefURL = simbriefURL.join('&')
-        link.href = simbriefURL
-        button.innerText = 'Simbrief'
-        link.appendChild(button)
-        link.target = '_blank'
+            prev_pax = pax
+            var simbriefURL = ['https://dispatch.simbrief.com/options/custom?']
+            simbriefURL.push('type=CL60')
+            simbriefURL.push(`orig=${origin}`)
+            simbriefURL.push(`dest=${destination}`)
+            simbriefURL.push(`pax=${pax}`)
+            simbriefURL = simbriefURL.join('&')
+            link.href = simbriefURL
+            button.innerText = 'Simbrief'
+            link.appendChild(button)
+            link.target = '_blank'
 
-        paragraph.innerHTML += `<br> ${origin} - ${destination}    `
-        paragraph.appendChild(link)
+            paragraph.innerHTML += `<br> ${origin} - ${destination}    `
+            paragraph.appendChild(link)
+        }
     }
 }
 
